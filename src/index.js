@@ -4,22 +4,20 @@ import Notiflix from 'notiflix';
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://pixabay.com/api';
-
-const DEBOUNCE_DELAY = 300;
 const searchForm = document.querySelector('#search-form');
-const loadButton = document.querySelector('.load-more');
+const loadMoreButton = document.querySelector('.load-more');
 const galleryList = document.querySelector('.gallery');
 let searchImage = "";
-let imageCardData = '';
-
-searchForm.addEventListener('input', debounce(event => {
-    searchImage = searchForm.searchQuery.value.trim();
-}, DEBOUNCE_DELAY));
+let imageCardData = [];
 
 searchForm.addEventListener('submit', event => {
     event.preventDefault();
-  getImages(searchImage).then(createCard);
+    searchImage = searchForm.searchQuery.value.trim();
+    getImages(searchImage).then(createCard);
 });
+
+loadMoreButton.addEventListener('click', onLoadMore);
+
 
 
  function getImages(searchImage) {
@@ -30,12 +28,13 @@ searchForm.addEventListener('submit', event => {
 function createCard(image) {
 
     imageCardData = image.data.hits;
+    // console.log(imageCardData.length);
 
-    if (imageCardData.length === '') {
-       return Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
+    if (imageCardData.length === 0) {
+       Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
     }
-    else {
-    const string = imageCardData.reduce((imagesList, { webformatURL, tags, likes, views, comments, downloads }) => {
+    else{
+        galleryList.innerHTML = imageCardData.reduce((imagesList, { webformatURL, tags, likes, views, comments, downloads }) => {
             const template = `<div class="photo-card">
                 <img src="${webformatURL}" alt="${tags}" loading="lazy" />
                 <div class="info">
@@ -54,10 +53,30 @@ function createCard(image) {
                 </div>
                 </div>`;
         return imagesList + template; 
-         },)
-        galleryList.innerHTML = string;
+        }, '')
     }
-}
+};
+
+function onLoadMore(searchImage) {
+ getImages(searchImage).then(createCard);    
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // function showGalleryProfile() {
