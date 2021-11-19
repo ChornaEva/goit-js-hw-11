@@ -1,5 +1,6 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
+import SimpleLightbox from "simplelightbox";
 import axios from 'axios';
 
 axios.defaults.baseURL = 'https://pixabay.com/api';
@@ -10,7 +11,7 @@ const galleryList = document.querySelector('.gallery');
 
 let searchImage = "";
 let page = 1;
-let imageLimit = 3;
+let imageLimit = 40;
 
 
 searchForm.addEventListener('submit', onSubmit);
@@ -29,21 +30,21 @@ function onSubmitcreateCard(image) {
        Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
     }
     else{
-        galleryList.innerHTML = imageCardData.reduce((imagesList, { webformatURL, tags, likes, views, comments, downloads }) => {
+        galleryList.innerHTML = imageCardData.reduce((imagesList, { largeImageURL, webformatURL, tags, likes, views, comments, downloads }) => {
             const template = `<div class="photo-card">
-                <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+                <img src="${webformatURL}" alt="${tags}" loading="lazy width=60px" />
                 <div class="info">
                     <p class="info-item">
-                    <b>Likes: ${likes}</b>
+                    <b>Likes: <span class=info-item-color>${likes}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Views: ${views}</b>
+                    <b>Views: <span class=info-item-color>${views}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Comments: ${comments}</b>
+                    <b>Comments: <span class=info-item-color>${comments}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Downloads: ${downloads}</b>
+                    <b>Downloads: <span class=info-item-color>${downloads}</span></b>
                     </p>
                 </div>
                 </div>`;
@@ -55,27 +56,27 @@ function onSubmitcreateCard(image) {
 function onLoadMoreCreateCard(image) {
     const imageCardData = image.data.hits;
     
-    imageCardData.map(({ webformatURL, tags, likes, views, comments, downloads }) => {
+    imageCardData.map(({ largeImageURL, webformatURL, tags, likes, views, comments, downloads }) => {
        const string = `<div class="photo-card">
-                <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+                <img src="${webformatURL}" alt="${tags}" loading="lazy"/>
                 <div class="info">
                     <p class="info-item">
-                    <b>Likes: ${likes}</b>
+                    <b>Likes: <span class=info-item-color>${likes}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Views: ${views}</b>
+                    <b>Views: <span class=info-item-color>${views}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Comments: ${comments}</b>
+                    <b>Comments: <span class=info-item-color>${comments}</span></b>
                     </p>
                     <p class="info-item">
-                    <b>Downloads: ${downloads}</b>
+                    <b>Downloads: <span class=info-item-color>${downloads}</span></b>
                     </p>
                 </div>
                 </div>`;
         galleryList.insertAdjacentHTML('beforeend', string);
     })
- }
+};
 
 function onLoadMore() {
     page += 1;
@@ -89,12 +90,28 @@ function onSubmit() {
     page = 1;
     searchImage = searchForm.searchQuery.value.trim();
     getImages(searchImage).then(onSubmitcreateCard); 
+};
+
+
+
+
+// largeImageURL (работает, но не получает большую картинку):
+const openLargeImage = (event) => {
+    event.preventDefault();
+
+    const largeImage = event.target.dataset.source;
+    const modalWindow = basicLightbox.create(`<img width="1400" height="900" src="${largeImage}">`);
+    modalWindow.show();
 }
+    
+document.addEventListener("keydown", event => {
+    if (event.key === 'Escape') {
+      modalWindow.close();
+      document.removeEventListener("keydown", openLargeImage);
+    }
+  })
 
-
-
-
-
+galleryList.addEventListener('click', openLargeImage);
 
 
 
