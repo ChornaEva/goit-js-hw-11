@@ -1,9 +1,6 @@
 import './css/styles.css';
 import Notiflix from 'notiflix';
-import SimpleLightbox from "simplelightbox";
-import axios from 'axios';
-
-axios.defaults.baseURL = 'https://pixabay.com/api';
+import {getImages} from "./api"
 
 const searchForm = document.querySelector('#search-form');
 const loadMoreButton = document.querySelector('.load-more');
@@ -12,25 +9,22 @@ const galleryList = document.querySelector('.gallery');
 let searchImage = "";
 let page = 1;
 let imageLimit = 40;
+let totalHits;
 
 
 searchForm.addEventListener('submit', onSubmit);
 loadMoreButton.addEventListener('click', onLoadMore);
 
-function getImages(searchImage) {
-    return axios.get(`/?key=24369719-4937f00e9b76df3c43c2e5aa7&q=${searchImage}&image_type=photo&orientation=horizontal&safesearch=true&per_page=${imageLimit}&page=${page}`);
-};
-
 
 function onSubmitcreateCard(image) {
 
-   const imageCardData = image.data.hits;
-
+    const imageCardData = image.data.hits;
+    
     if (imageCardData.length === 0) {
        Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.'); 
     }
     else{
-        galleryList.innerHTML = imageCardData.reduce((imagesList, { largeImageURL, webformatURL, tags, likes, views, comments, downloads }) => {
+        galleryList.innerHTML = imageCardData.reduce((imagesList, { webformatURL, tags, likes, views, comments, downloads }) => {
             const template = `<div class="photo-card">
                 <img src="${webformatURL}" alt="${tags}" loading="lazy width=60px" />
                 <div class="info">
@@ -48,15 +42,16 @@ function onSubmitcreateCard(image) {
                     </p>
                 </div>
                 </div>`;
-        return imagesList + template; 
-        }, '')
+            return imagesList + template;
+        }, '');
     }
 };
 
 function onLoadMoreCreateCard(image) {
     const imageCardData = image.data.hits;
+    totalHits = image.data.totalHits;
     
-    imageCardData.map(({ largeImageURL, webformatURL, tags, likes, views, comments, downloads }) => {
+    imageCardData.map(({ webformatURL, tags, likes, views, comments, downloads }) => {
        const string = `<div class="photo-card">
                 <img src="${webformatURL}" alt="${tags}" loading="lazy"/>
                 <div class="info">
@@ -76,56 +71,30 @@ function onLoadMoreCreateCard(image) {
                 </div>`;
         galleryList.insertAdjacentHTML('beforeend', string);
     })
-};
 
-function onLoadMore() {
-    page += 1;
-    getImages(searchImage).then(onLoadMoreCreateCard);
     
-console.log(page);
 };
 
-function onSubmit() {
+async function onLoadMore() {
+    if (page * imageLimit >= totalHits) {
+        loadMoreButton.classList.add('is-hidden');
+        Notiflix.Notify.failure("We're sorry, but you've reached the end of search results.");
+    } else {
+        page += 1;
+        const images = await getImages(searchImage, page, imageLimit);
+        onLoadMoreCreateCard(images);
+    }
+};
+
+async function onSubmit(event) {
     event.preventDefault();
     page = 1;
+
+    loadMoreButton.classList.add('is-hidden');
     searchImage = searchForm.searchQuery.value.trim();
-    getImages(searchImage).then(onSubmitcreateCard); 
+
+    const images = await getImages(searchImage, page, imageLimit);
+    onSubmitcreateCard(images);
+
+    loadMoreButton.classList.remove('is-hidden');
 };
-
-
-
-
-// largeImageURL (работает, но не получает большую картинку):
-const openLargeImage = (event) => {
-    event.preventDefault();
-
-    const largeImage = event.target.dataset.source;
-    const modalWindow = basicLightbox.create(`<img width="1400" height="900" src="${largeImage}">`);
-    modalWindow.show();
-}
-    
-document.addEventListener("keydown", event => {
-    if (event.key === 'Escape') {
-      modalWindow.close();
-      document.removeEventListener("keydown", openLargeImage);
-    }
-  })
-
-galleryList.addEventListener('click', openLargeImage);
-
-
-
-
-
-
-
-
-
-// Первый вариант слушателя на форме:
-
-// searchForm.addEventListener('submit', event => {
-//     // event.preventDefault();
-
-//     searchImage = searchForm.searchQuery.value.trim();
-//     getImages(searchImage).then(onSubmitcreateCard);
-// });
